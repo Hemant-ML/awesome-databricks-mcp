@@ -376,7 +376,7 @@ fi
 if ! command -v bun &> /dev/null; then
     echo "❌ bun not found. Installing bun..."
     curl -fsSL https://bun.sh/install | bash
-    source ~/.bashrc
+    source ~/.zshrc
 fi
 
 echo "✅ All required tools are available"

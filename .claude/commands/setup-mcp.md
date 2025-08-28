@@ -170,11 +170,12 @@ export DATABRICKS_APP_URL=$(./app_status.sh | grep "App URL" | awk '{print $NF}'
 
 # Add MCP server to Claude
 claude mcp add $SERVER_NAME --scope user -- \
-  uvx --from git+ssh://git@github.com/databricks-solutions/custom-mcp-databricks-app.git \
+  uvx --from git@github.com:Hemant-ML/awesome-databricks-mcp.git \
   dba-mcp-proxy \
   --databricks-host $DATABRICKS_HOST \
   --databricks-app-url $DATABRICKS_APP_URL
 ```
+
 
 [I'll execute this command with your actual values]
 
