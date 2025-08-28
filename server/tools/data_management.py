@@ -1,7 +1,5 @@
 """Data management MCP tools for Databricks."""
 
-import os
-
 from databricks.sdk import WorkspaceClient
 
 
@@ -11,6 +9,10 @@ def load_data_tools(mcp_server):
   Args:
       mcp_server: The FastMCP server instance to register tools with
   """
+
+  def get_workspace_client():
+    """Get authenticated Databricks workspace client."""
+    return WorkspaceClient()
 
   @mcp_server.tool
   def list_dbfs_files(path: str = '/') -> dict:
@@ -23,13 +25,10 @@ def load_data_tools(mcp_server):
         Dictionary with file listings or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # List files in DBFS
-      files = w.dbfs.list(path)
+      files = client.dbfs.list(path)
 
       file_list = []
       for file in files:
@@ -43,7 +42,7 @@ def load_data_tools(mcp_server):
         )
 
       return {
-        'success': True,
+        'status': 'success',
         'path': path,
         'files': file_list,
         'count': len(file_list),
@@ -52,7 +51,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error listing DBFS files: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}', 'files': [], 'count': 0}
+      return {'status': 'error', 'error': f'Error: {str(e)}', 'files': [], 'count': 0}
 
   @mcp_server.tool
   def get_dbfs_file_info(path: str) -> dict:
@@ -65,16 +64,13 @@ def load_data_tools(mcp_server):
         Dictionary with file/directory information or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # Get file info
-      file_info = w.dbfs.get_status(path)
+      file_info = client.dbfs.get_status(path)
 
       return {
-        'success': True,
+        'status': 'success',
         'path': path,
         'file_info': {
           'path': file_info.path,
@@ -87,7 +83,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error getting DBFS file info: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}'}
+      return {'status': 'error', 'error': f'Error: {str(e)}'}
 
   @mcp_server.tool
   def read_dbfs_file(path: str, offset: int = 0, length: int = None) -> dict:
@@ -102,16 +98,13 @@ def load_data_tools(mcp_server):
         Dictionary with file content or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # Read file content
       if length:
-        content = w.dbfs.read(path, offset=offset, length=length)
+        content = client.dbfs.read(path, offset=offset, length=length)
       else:
-        content = w.dbfs.read(path, offset=offset)
+        content = client.dbfs.read(path, offset=offset)
 
       # Convert bytes to string if possible
       try:
@@ -122,7 +115,7 @@ def load_data_tools(mcp_server):
         content_type = 'binary'
 
       return {
-        'success': True,
+        'status': 'success',
         'path': path,
         'offset': offset,
         'length': length,
@@ -134,7 +127,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error reading DBFS file: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}'}
+      return {'status': 'error', 'error': f'Error: {str(e)}'}
 
   @mcp_server.tool
   def write_dbfs_file(path: str, content: str, overwrite: bool = False) -> dict:
@@ -149,19 +142,16 @@ def load_data_tools(mcp_server):
         Dictionary with operation result or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # Convert string to bytes
       content_bytes = content.encode('utf-8')
 
       # Write file content
-      w.dbfs.put(path, content_bytes, overwrite=overwrite)
+      client.dbfs.put(path, content_bytes, overwrite=overwrite)
 
       return {
-        'success': True,
+        'status': 'success',
         'path': path,
         'content_length': len(content_bytes),
         'overwrite': overwrite,
@@ -170,7 +160,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error writing DBFS file: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}'}
+      return {'status': 'error', 'error': f'Error: {str(e)}'}
 
   @mcp_server.tool
   def delete_dbfs_path(path: str, recursive: bool = False) -> dict:
@@ -184,16 +174,13 @@ def load_data_tools(mcp_server):
         Dictionary with operation result or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # Delete path
-      w.dbfs.delete(path, recursive=recursive)
+      client.dbfs.delete(path, recursive=recursive)
 
       return {
-        'success': True,
+        'status': 'success',
         'path': path,
         'recursive': recursive,
         'message': f'Path {path} deleted successfully',
@@ -201,7 +188,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error deleting DBFS path: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}'}
+      return {'status': 'error', 'error': f'Error: {str(e)}'}
 
   @mcp_server.tool
   def create_dbfs_directory(path: str) -> dict:
@@ -214,23 +201,20 @@ def load_data_tools(mcp_server):
         Dictionary with operation result or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # Create directory
-      w.dbfs.mkdirs(path)
+      client.dbfs.mkdirs(path)
 
       return {
-        'success': True,
+        'status': 'success',
         'path': path,
         'message': f'Directory {path} created successfully',
       }
 
     except Exception as e:
       print(f'❌ Error creating DBFS directory: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}'}
+      return {'status': 'error', 'error': f'Error: {str(e)}'}
 
   @mcp_server.tool
   def move_dbfs_path(source: str, destination: str) -> dict:
@@ -244,16 +228,13 @@ def load_data_tools(mcp_server):
         Dictionary with operation result or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # Move path
-      w.dbfs.move(source, destination)
+      client.dbfs.move(source, destination)
 
       return {
-        'success': True,
+        'status': 'success',
         'source': source,
         'destination': destination,
         'message': f'Path moved successfully from {source} to {destination}',
@@ -261,7 +242,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error moving DBFS path: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}'}
+      return {'status': 'error', 'error': f'Error: {str(e)}'}
 
   @mcp_server.tool
   def copy_dbfs_file(source_path: str, destination_path: str) -> dict:
@@ -275,21 +256,18 @@ def load_data_tools(mcp_server):
         Dictionary with operation result or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # Read source file
-      with w.dbfs.read(source_path) as reader:
+      with client.dbfs.read(source_path) as reader:
         content = reader.read()
 
       # Write to destination
-      with w.dbfs.write(destination_path, overwrite=True) as writer:
+      with client.dbfs.write(destination_path, overwrite=True) as writer:
         writer.write(content)
 
       return {
-        'success': True,
+        'status': 'success',
         'source_path': source_path,
         'destination_path': destination_path,
         'message': f'File copied successfully from {source_path} to {destination_path}',
@@ -297,7 +275,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error copying DBFS file: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}'}
+      return {'status': 'error', 'error': f'Error: {str(e)}'}
 
   @mcp_server.tool
   def list_external_locations() -> dict:
@@ -307,13 +285,10 @@ def load_data_tools(mcp_server):
         Dictionary with external location listings or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # List external locations
-      locations = w.external_locations.list()
+      locations = client.external_locations.list()
 
       location_list = []
       for location in locations:
@@ -330,7 +305,7 @@ def load_data_tools(mcp_server):
         )
 
       return {
-        'success': True,
+        'status': 'success',
         'locations': location_list,
         'count': len(location_list),
         'message': f'Found {len(location_list)} external location(s)',
@@ -338,7 +313,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error listing external locations: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}', 'locations': [], 'count': 0}
+      return {'status': 'error', 'error': f'Error: {str(e)}', 'locations': [], 'count': 0}
 
   @mcp_server.tool
   def list_volumes(catalog_name: str, schema_name: str) -> dict:
@@ -352,13 +327,10 @@ def load_data_tools(mcp_server):
         Dictionary containing list of volumes with their details
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # List volumes in the schema
-      volumes = w.volumes.list(catalog_name=catalog_name, schema_name=schema_name)
+      volumes = client.volumes.list(catalog_name=catalog_name, schema_name=schema_name)
 
       volume_list = []
       for volume in volumes:
@@ -376,7 +348,7 @@ def load_data_tools(mcp_server):
         )
 
       return {
-        'success': True,
+        'status': 'success',
         'catalog_name': catalog_name,
         'schema_name': schema_name,
         'volumes': volume_list,
@@ -386,7 +358,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error listing volumes: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}', 'volumes': [], 'count': 0}
+      return {'status': 'error', 'error': f'Error: {str(e)}', 'volumes': [], 'count': 0}
 
   @mcp_server.tool
   def create_volume(
@@ -411,10 +383,7 @@ def load_data_tools(mcp_server):
         Dictionary with operation result or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # Prepare volume configuration
       volume_config = {
@@ -427,10 +396,10 @@ def load_data_tools(mcp_server):
         volume_config['storage_location'] = storage_location
 
       # Create the volume
-      volume = w.volumes.create(catalog_name=catalog_name, schema_name=schema_name, **volume_config)
+      volume = client.volumes.create(catalog_name=catalog_name, schema_name=schema_name, **volume_config)
 
       return {
-        'success': True,
+        'status': 'success',
         'volume_name': volume_name,
         'catalog_name': catalog_name,
         'schema_name': schema_name,
@@ -441,7 +410,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error creating volume: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}'}
+      return {'status': 'error', 'error': f'Error: {str(e)}'}
 
   @mcp_server.tool
   def describe_external_location(location_name: str) -> dict:
@@ -454,16 +423,13 @@ def load_data_tools(mcp_server):
         Dictionary with external location details or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # Get external location details
-      location = w.external_locations.get(location_name)
+      location = client.external_locations.get(location_name)
 
       return {
-        'success': True,
+        'status': 'success',
         'location': {
           'name': location.name,
           'url': location.url,
@@ -480,7 +446,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error describing external location: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}'}
+      return {'status': 'error', 'error': f'Error: {str(e)}'}
 
   @mcp_server.tool
   def list_storage_credentials() -> dict:
@@ -490,13 +456,10 @@ def load_data_tools(mcp_server):
         Dictionary with storage credential listings or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # List storage credentials
-      credentials = w.storage_credentials.list()
+      credentials = client.storage_credentials.list()
 
       credential_list = []
       for cred in credentials:
@@ -511,7 +474,7 @@ def load_data_tools(mcp_server):
         )
 
       return {
-        'success': True,
+        'status': 'success',
         'credentials': credential_list,
         'count': len(credential_list),
         'message': f'Found {len(credential_list)} storage credential(s)',
@@ -519,7 +482,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error listing storage credentials: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}', 'credentials': [], 'count': 0}
+      return {'status': 'error', 'error': f'Error: {str(e)}', 'credentials': [], 'count': 0}
 
   @mcp_server.tool
   def describe_storage_credential(credential_name: str) -> dict:
@@ -532,16 +495,13 @@ def load_data_tools(mcp_server):
         Dictionary with storage credential details or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # Get storage credential details
-      credential = w.storage_credentials.get(credential_name)
+      credential = client.storage_credentials.get(credential_name)
 
       return {
-        'success': True,
+        'status': 'success',
         'credential': {
           'name': credential.name,
           'owner': credential.owner,
@@ -555,7 +515,7 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error describing storage credential: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}'}
+      return {'status': 'error', 'error': f'Error: {str(e)}'}
 
   @mcp_server.tool
   def list_uc_permissions(
@@ -572,15 +532,12 @@ def load_data_tools(mcp_server):
         Dictionary with permission listings or error message
     """
     try:
-      # Initialize Databricks SDK
-      w = WorkspaceClient(
-        host=os.environ.get('DATABRICKS_HOST'), token=os.environ.get('DATABRICKS_TOKEN')
-      )
+      client = get_workspace_client()
 
       # Note: Permission listing requires specific permissions
       # This is a placeholder for the concept
       return {
-        'success': True,
+        'status': 'success',
         'catalog': catalog_name,
         'schema': schema_name,
         'table': table_name,
@@ -592,4 +549,4 @@ def load_data_tools(mcp_server):
 
     except Exception as e:
       print(f'❌ Error listing permissions: {str(e)}')
-      return {'success': False, 'error': f'Error: {str(e)}', 'permissions': [], 'count': 0}
+      return {'status': 'error', 'error': f'Error: {str(e)}', 'permissions': [], 'count': 0}
