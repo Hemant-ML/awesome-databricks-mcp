@@ -10,12 +10,12 @@ import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
   FileCode,
-  Wrench,
   Terminal,
   Copy,
   ExternalLink,
 } from "lucide-react";
 import { PromptsService, McpService } from "@/fastapi_client";
+import { ToolsSection } from "@/components/ToolsSection";
 
 interface Prompt {
   name: string;
@@ -177,7 +177,7 @@ export function PromptsPage() {
 
     // Use the correct uvx command from the README with actual values
     return `claude mcp add ${mcpConfig.servername} --scope user -- \\
-  uvx --from git+https://git@github.com:Hemant-ML/awesome-databricks-mcp.git dba-mcp-proxy \\
+  uvx --from git+https://github.com/Hemant-ML/awesome-databricks-mcp.git dba-mcp-proxy \\
   --databricks-host ${databricksHost} \\
   --databricks-app-url ${databricksAppUrl}`;
   };
@@ -190,7 +190,7 @@ export function PromptsPage() {
       "command": "uvx",
       "args": [
         "--from",
-        "git+https://git@github.com:Hemant-ML/awesome-databricks-mcp.git",
+        "git+https://github.com/Hemant-ML/awesome-databricks-mcp.git",
         "dba-mcp-proxy",
         "--databricks-host",
         "${databricksHost}",
@@ -345,36 +345,19 @@ export function PromptsPage() {
       </div>
 
       {/* MCP Tools Section */}
-      <div className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Wrench className="h-6 w-6" />
-          MCP Tools
-        </h2>
-
-        {mcpTools.length === 0 ? (
+      {mcpTools.length === 0 ? (
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+            <Terminal className="h-6 w-6" />
+            MCP Tools
+          </h2>
           <div className="text-center text-muted-foreground mb-8">
-            No MCP tools found.
+            No MCP tools found. Make sure the MCP server is running.
           </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
-            {mcpTools.map((tool) => (
-              <Card key={tool.name}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{tool.name}</CardTitle>
-                  <CardDescription className="whitespace-pre-line">
-                    {tool.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Available as MCP tool
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <ToolsSection tools={mcpTools} servername={servername} />
+      )}
     </div>
   );
 }
